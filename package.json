@@ -6,6 +6,9 @@
   "license": "ISC",
   "dependencies": {
     "async": "^1.5.2",
-    "lodash": "^4.11.1"
+    "lodash": "^4.11.1",
+    "mysql": "^2.10.2",
+    "node-uuid": "^1.4.7",
+    "sequelize": "^3.21.0"
   }
 }

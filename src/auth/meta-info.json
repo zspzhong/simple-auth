@@ -1,0 +1,45 @@
+{
+  "initial": "initial/index",
+  "serviceList": [
+    {
+      "name": "sendCode",
+      "path": "/sendCode",
+      "realizeFile": "auth",
+      "realizeFunction": "sendCode",
+      "method": "post",
+      "desc": "发送验证码"
+    },
+    {
+      "name": "register",
+      "path": "/register",
+      "realizeFile": "auth",
+      "realizeFunction": "register",
+      "method": "post",
+      "desc": "注册"
+    },
+    {
+      "name": "login",
+      "path": "/login",
+      "realizeFile": "auth",
+      "realizeFunction": "login",
+      "method": "post",
+      "desc": "登陆"
+    },
+    {
+      "name": "logout",
+      "path": "/logout",
+      "realizeFile": "auth",
+      "realizeFunction": "logout",
+      "method": "post",
+      "desc": "登出"
+    },
+    {
+      "name": "resetPassword",
+      "path": "/password/reset",
+      "realizeFile": "auth",
+      "realizeFunction": "resetPassword",
+      "method": "post",
+      "desc": "重置密码"
+    }
+  ]
+}
