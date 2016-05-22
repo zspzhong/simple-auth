@@ -6,10 +6,12 @@
     "rootPath": "/Users/shasharoman/private/simple-auth",
     "srcPath": "/Users/shasharoman/private/simple-auth/src",
     "logPath": "/Users/shasharoman/private/simple-auth/logs",
-    "baseUrl": "http://127.0.0.1:8004"
+    "baseUrl": "http://127.0.0.1:8004",
+    "authUrl": "http://127.0.0.1:8004"
   },
   "appOption": {
     "servicePrefix": "auth",
+    "sessionStore": false,
     "middleware": [
       {
         "name": "access",
@@ -28,13 +30,6 @@
     "password": " ",
     "database": "simple_auth",
     "connectionLimit": 10
-  },
-  "mongoOption": {
-    "host": "192.168.99.100",
-    "port": 27017,
-    "user": "",
-    "password": "",
-    "database": "simple_auth"
   },
   "redisOption": {
     "host": "192.168.99.100",

@@ -1,4 +1,5 @@
 var redis = require(global.frameworkLibPath + '/utils/redisUtils').instance();
+var logger = require(global.frameworkLibPath + '/logger');
 var cacheKey = require('../../lib/cacheKey');
 var uuid = require('node-uuid');
 var _ = require('lodash');
@@ -12,13 +13,14 @@ exports.register = register;
 exports.login = login;
 exports.logout = logout;
 exports.resetPassword = resetPassword;
+exports.check = check;
 
 function sendCode(req, res, callback) {
     var reason = req.body.reason;
     var phoneNumber = req.body.phoneNumber || '';
 
     if (!phoneNumber) {
-        callback('却少必要参数');
+        callback(null, {code: 1, result: '却少必要参数'});
         return;
     }
 
@@ -37,20 +39,13 @@ function sendCode(req, res, callback) {
 
 function register(req, res, callback) {
     var code = req.body.code || '';
-    var phoneNumber = req.body.phoneNumber || '';
-    var username = req.body.username || phoneNumber || '';
+    var username = req.body.username || '';
     var password = req.body.password;
 
-    var codeMatch = false;
-
+    var doneBreak = callback;
     async.series([_verificationCode, _newUser], function (err) {
         if (err) {
             callback(err);
-            return;
-        }
-
-        if (!codeMatch) {
-            callback(null, {code: 1, result: '验证码不正确'});
             return;
         }
 
@@ -58,14 +53,15 @@ function register(req, res, callback) {
     });
 
     function _verificationCode(callback) {
-        redis.get(cacheKey.verificationCode(phoneNumber, 'register'), function (err, result) {
+        redis.get(cacheKey.verificationCode(username, 'register'), function (err, result) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            if (code === result) {
-                codeMatch = true;
+            if (code !== result) {
+                doneBreak(null, {code: 1, result: '验证码不正确'});
+                return;
             }
 
             callback(null);
@@ -73,11 +69,6 @@ function register(req, res, callback) {
     }
 
     function _newUser(callback) {
-        if (!codeMatch) {
-            process.nextTick(callback);
-            return;
-        }
-
         var user = {
             id: uuid.v4(),
             salt: uuid.v4(),
@@ -95,21 +86,16 @@ function login(req, res, callback) {
 
     var deviceId = req.body.deviceId || '';
     var deviceType = req.body.deviceType || '';
-    var kick = !_.isUndefined(req.body.kick);
-    var duration = req.body.duration || 3600 * 24 * 10;
+    var duration = (req.body.duration || 3600 * 24 * 30) * 1000;
+    var kickOut = !_.isUndefined(req.body.kickOut);
 
-    var match = false;
-    var loginInfo = [];
+    var loginList = [];
     var token = uuid.v4();
 
-    async.series([_verification, _existed, _update, _token2User], function (err) {
+    var doneBreak = callback;
+    async.series([_verification, _existed, _update, _setToken2User], function (err) {
         if (err) {
             callback(err);
-            return;
-        }
-
-        if (!match) {
-            callback(null, {code: 1, result: '用户名密码不匹配'});
             return;
         }
 
@@ -117,23 +103,22 @@ function login(req, res, callback) {
     });
 
     function _verification(callback) {
-        dao.verificationUser(username, password, function (err, result) {
+        dao.checkPassword(username, password, function (err, result) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            match = (result === true);
+            if (result !== true) {
+                doneBreak(null, {code: 1, result: '用户名密码不匹配'});
+                return;
+            }
+
             callback(null);
         });
     }
 
     function _existed(callback) {
-        if (!match) {
-            process.nextTick(callback);
-            return;
-        }
-
         redis.get(cacheKey.loginInfo(username), function (err, result) {
             if (err) {
                 callback(err);
@@ -141,59 +126,111 @@ function login(req, res, callback) {
             }
 
             if (!_.isEmpty(result)) {
-                loginInfo = JSON.parse(result);
+                loginList = JSON.parse(result);
             }
             callback(null);
         });
     }
 
     function _update(callback) {
-        if (!match) {
-            process.nextTick(callback);
-            return;
-        }
-
-        if (kick) {
-            loginInfo = _.map(loginInfo, function (item) {
+        if (kickOut) {
+            loginList = _.map(loginList, function (item) {
                 if (item.deviceType === deviceType) {
-                    item.kickout = true;
+                    item.kickOut = true;
                 }
                 return item;
             });
         }
 
-        loginInfo.push({
+        loginList.push({
             token: token,
             expireTime: Date.now() + duration,
             deviceType: deviceType,
             deviceId: deviceId
         });
 
-        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginInfo), 'EX', redisExpireDuration, callback);
+        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginList), 'EX', redisExpireDuration, callback);
     }
 
-    function _token2User(callback) {
-        if (!match) {
-            process.nextTick(callback);
-            return;
-        }
-
+    function _setToken2User(callback) {
         redis.set(token, username, 'EX', redisExpireDuration, callback);
     }
 }
 
 function logout(req, res, callback) {
-    var token = req.body.token;
-    var username = '';
-    var loginInfo = [];
+    var token = req.query.token || req.body.token || req.headers['token'];
+    if (_.isEmpty(token)) {
+        callback(null, {code: 1, result: '却少必要参数token'});
+        return;
+    }
 
-    async.series([_username, _existed, _update, _delToken2User], function (err) {
+    var username = req.username;
+    var loginList = [];
+
+    var doneBreak = callback;
+    async.series([_existedToken, _update, _delToken2User], function (err) {
         if (err) {
             callback(err);
             return;
         }
 
         callback(null);
+    });
+
+    function _existedToken(callback) {
+        redis.get(cacheKey.loginInfo(username), function (err, result) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (_.isEmpty(result)) {
+                logger.error('用户登录信息丢失', 'token', token, 'username', username);
+                doneBreak(null, {code: 5, result: '服务器内部错误'});
+                return;
+            }
+
+            loginList = JSON.parse(result);
+            callback(null);
+        });
+    }
+
+    function _update(callback) {
+        loginList = _.filter(loginList, function (item) {
+            return item.token !== token;
+        });
+
+        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginList), 'EX', redisExpireDuration, callback);
+    }
+
+    function _delToken2User(callback) {
+        redis.del(token, callback);
+    }
+}
+
+function resetPassword(req, res, callback) {
+    callback(null);
+}
+
+function check(req, res, callback) {
+    var token = req.query.token || req.body.token || req.headers['token'];
+
+    if (_.isEmpty(token)) {
+        callback({code: 1, result: '却少必要参数token'});
+        return;
+    }
+
+    var username = '';
+    var tokenInfo = {};
+
+    var doneBreak = callback;
+    async.series([_username, _existedToken], function (err) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        callback(null, _result());
     });
 
     function _username(callback) {
@@ -204,38 +241,50 @@ function logout(req, res, callback) {
             }
 
             username = result;
+            if (_.isEmpty(username)) {
+                doneBreak(null, {code: 1, result: 'token无效'});
+                return;
+            }
+
             callback(null);
         });
     }
 
-    function _existed(callback) {
+    function _existedToken(callback) {
         redis.get(cacheKey.loginInfo(username), function (err, result) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            if (!_.isEmpty(result)) {
-                loginInfo = JSON.parse(result);
+            if (_.isEmpty(result)) {
+                logger.error('用户登录信息丢失', 'token', token, 'username', username);
+                doneBreak(null, {code: 5, result: '服务器内部错误'});
+                return;
             }
+
+            tokenInfo = _.find(JSON.parse(result), function (item) {
+                return item.token === token;
+            });
 
             callback(null);
         });
     }
 
-    function _update(callback) {
-        loginInfo = _.filter(loginInfo, function (item) {
-            return item.token !== token;
-        });
+    function _result() {
+        if (_.isEmpty(tokenInfo)) {
+            logger.error('用户登录信息丢失', 'token', token, 'username', username);
+            return {code: 5, result: '服务器内部错误'};
+        }
 
-        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginInfo), 'EX', redisExpireDuration, callback);
+        if (tokenInfo.expireTime < Date.now()) {
+            return {code: 1, result: '登录已过期'};
+        }
+
+        if (tokenInfo.kickOut) {
+            return {code: 2, result: '已在其它设备登录'};
+        }
+
+        return {code: 0, result: {username: username}};
     }
-
-    function _delToken2User(callback) {
-        redis.del(token, callback);
-    }
-}
-
-function resetPassword(req, res, callback) {
-    callback(null);
 }

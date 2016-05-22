@@ -30,8 +30,12 @@
       "path": "/logout",
       "realizeFile": "auth",
       "realizeFunction": "logout",
-      "method": "post",
-      "desc": "登出"
+      "method": [
+        "get",
+        "post"
+      ],
+      "desc": "登出",
+      "auth": "authToken"
     },
     {
       "name": "resetPassword",
@@ -40,6 +44,17 @@
       "realizeFunction": "resetPassword",
       "method": "post",
       "desc": "重置密码"
+    },
+    {
+      "name": "checkToken",
+      "path": "/token/check",
+      "realizeFile": "auth",
+      "realizeFunction": "check",
+      "method": [
+        "get",
+        "post"
+      ],
+      "desc": "检查登录token有效性"
     }
   ]
 }
