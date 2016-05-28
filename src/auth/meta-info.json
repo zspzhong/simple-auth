@@ -2,10 +2,10 @@
   "initial": "initial/index",
   "serviceList": [
     {
-      "name": "sendCode",
-      "path": "/sendCode",
+      "name": "sendVCode",
+      "path": "/sendVCode",
       "realizeFile": "auth",
-      "realizeFunction": "sendCode",
+      "realizeFunction": "sendVCode",
       "method": "post",
       "desc": "发送验证码"
     },
@@ -30,12 +30,8 @@
       "path": "/logout",
       "realizeFile": "auth",
       "realizeFunction": "logout",
-      "method": [
-        "get",
-        "post"
-      ],
-      "desc": "登出",
-      "auth": "authToken"
+      "method": "post",
+      "desc": "登出"
     },
     {
       "name": "resetPassword",

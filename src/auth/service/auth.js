@@ -1,3 +1,4 @@
+var innerRequest = require(global.frameworkLibPath + '/utils/innerRequest');
 var redis = require(global.frameworkLibPath + '/utils/redisUtils').instance();
 var logger = require(global.frameworkLibPath + '/logger');
 var cacheKey = require('../../lib/cacheKey');
@@ -8,42 +9,55 @@ var dao = require('../model/authDao');
 
 var redisExpireDuration = 3600 * 24 * 30 * 6;// redis过期时长
 
-exports.sendCode = sendCode;
+exports.sendVCode = sendVCode;
 exports.register = register;
 exports.login = login;
 exports.logout = logout;
 exports.resetPassword = resetPassword;
 exports.check = check;
 
-function sendCode(req, res, callback) {
+function sendVCode(req, res, callback) {
     var reason = req.body.reason;
     var phoneNumber = req.body.phoneNumber || '';
+    var code = _.padStart(Math.floor(Math.random() * 10000) + '', 4, '0');
 
     if (!phoneNumber) {
-        callback(null, {code: 1, result: '却少必要参数'});
+        callback(null, {code: 1, result: '电话号码不能为空'});
         return;
     }
 
     // todo 受信验证
     // todo 限制同一号码调用频率
 
-    _sendCode(callback);
+    async.series([_sendVCode, _set2Cache], callback);
 
-    function _sendCode(callback) {
-        var code = _.padStart(Math.floor(Math.random() * 10000) + '', 4, '0');
+    function _sendVCode(callback) {
+        var url = global.appEnv.smsUrl + '/svc/sms/sendVCode';
+        var data = {
+            phoneNumber: phoneNumber,
+            code: code
+        };
 
-        // todo send
-        redis.set(cacheKey.verificationCode(phoneNumber, reason), code, 'EX', 300, callback);
+        innerRequest.post(url, data, callback);
+    }
+
+    function _set2Cache() {
+        redis.set(cacheKey.verificationCode(phoneNumber, reason), code, 'EX', 600, callback);
     }
 }
 
 function register(req, res, callback) {
     var code = req.body.code || '';
-    var username = req.body.username || '';
+    var username = req.body.username;
     var password = req.body.password;
 
+    if (_.isEmpty(username) || _.isEmpty(password)) {
+        callback(null, {code: 1, result: '用户名或密码不能为空'});
+        return;
+    }
+
     var doneBreak = callback;
-    async.series([_verificationCode, _newUser], function (err) {
+    async.series([_verification, _checkDuplicate, _newUser], function (err) {
         if (err) {
             callback(err);
             return;
@@ -52,20 +66,30 @@ function register(req, res, callback) {
         callback(null);
     });
 
-    function _verificationCode(callback) {
+    function _verification(callback) {
+        if (_isMailRegister(username)) {
+            process.nextTick(callback);
+            return;
+        }
+
         redis.get(cacheKey.verificationCode(username, 'register'), function (err, result) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            if (code !== result) {
+            if (_.isEmpty(result) || code !== result) {
                 doneBreak(null, {code: 1, result: '验证码不正确'});
                 return;
             }
 
             callback(null);
         });
+    }
+
+    function _checkDuplicate(callback) {
+        // todo 重复注册检查
+        process.nextTick(callback);
     }
 
     function _newUser(callback) {
@@ -77,6 +101,12 @@ function register(req, res, callback) {
         };
 
         dao.newUser(user, callback);
+    }
+
+    function _isMailRegister(username) {
+        var mailReg = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
+
+        return mailReg.test(username);
     }
 }
 
@@ -99,7 +129,7 @@ function login(req, res, callback) {
             return;
         }
 
-        callback(null, token);
+        callback(null, {token: token});
     });
 
     function _verification(callback) {
@@ -110,7 +140,7 @@ function login(req, res, callback) {
             }
 
             if (result !== true) {
-                doneBreak(null, {code: 1, result: '用户名密码不匹配'});
+                doneBreak(null, {code: 1, result: '用户名和密码不匹配'});
                 return;
             }
 
@@ -158,13 +188,19 @@ function login(req, res, callback) {
 }
 
 function logout(req, res, callback) {
-    var token = req.query.token || req.body.token || req.headers['token'];
+    var token = req.body.token || req.headers['x-token'];
+    var username = req.body.username;
+
     if (_.isEmpty(token)) {
         callback(null, {code: 1, result: '却少必要参数token'});
         return;
     }
 
-    var username = req.username;
+    if (_.isEmpty(username)) {
+        callback(null, {code: 1, result: '用户名不能为空'});
+        return;
+    }
+
     var loginList = [];
 
     var doneBreak = callback;
@@ -213,7 +249,7 @@ function resetPassword(req, res, callback) {
 }
 
 function check(req, res, callback) {
-    var token = req.query.token || req.body.token || req.headers['token'];
+    var token = req.query.token || req.body.token || req.headers['x-token'];
 
     if (_.isEmpty(token)) {
         callback({code: 1, result: '却少必要参数token'});

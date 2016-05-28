@@ -19,8 +19,4 @@ sequelizeWrap.define('user_delete', {
     updated_at: {type: TYPE.FLOAT, allowNull: false}
 });
 
-//sequelizeWrap.define('user_profile', {
-//    id: {type: TYPE.STRING(64), primaryKey: true}
-//});
-
 sequelizeWrap.sync();
