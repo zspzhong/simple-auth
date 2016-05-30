@@ -1,7 +1,7 @@
 var TYPE = require('sequelize');
 var sequelizeWrap = require('../../lib/sequelizeWrap');
 
-sequelizeWrap.define('user', {
+sequelizeWrap.define('account', {
     id: {type: TYPE.STRING(64), primaryKey: true},
     username: {type: TYPE.STRING(64), allowNull: false, unique: true},
     password: {type: TYPE.STRING(64), allowNull: false},
@@ -10,7 +10,7 @@ sequelizeWrap.define('user', {
     updated_at: {type: TYPE.FLOAT, allowNull: false}
 });
 
-sequelizeWrap.define('user_delete', {
+sequelizeWrap.define('account_delete', {
     id: {type: TYPE.STRING(64), primaryKey: true},
     username: {type: TYPE.STRING(64), allowNull: false, unique: true},
     password: {type: TYPE.STRING(64), allowNull: false},
