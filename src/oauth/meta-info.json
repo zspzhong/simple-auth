@@ -1,0 +1,21 @@
+{
+  "initial": "initial/index",
+  "serviceList": [
+    {
+      "name": "userInfo",
+      "path": "/:thirdParty/userInfo",
+      "realizeFile": "oauth",
+      "realizeFunction": "userInfo",
+      "method": "get",
+      "desc": "获取第三方用户信息"
+    },
+    {
+      "name": "accountByOpenId",
+      "path": "/accountByOpenId/:openId",
+      "realizeFile": "oauth",
+      "realizeFunction": "accountByOpenId",
+      "method": "get",
+      "desc": "根据openId获取帐号信息"
+    }
+  ]
+}

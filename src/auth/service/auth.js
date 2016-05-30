@@ -5,7 +5,7 @@ var cacheKey = require('../../lib/cacheKey');
 var uuid = require('node-uuid');
 var _ = require('lodash');
 var async = require('async');
-var dao = require('../model/authDao');
+var dao = require('../model/dao');
 
 var redisExpireDuration = 3600 * 24 * 30 * 6;// redis过期时长
 
@@ -57,7 +57,7 @@ function register(req, res, callback) {
     }
 
     var doneBreak = callback;
-    async.series([_verification, _checkDuplicate, _newUser], function (err) {
+    async.series([_verification, _checkDuplicate, _newAccount], function (err) {
         if (err) {
             callback(err);
             return;
@@ -92,7 +92,7 @@ function register(req, res, callback) {
         process.nextTick(callback);
     }
 
-    function _newUser(callback) {
+    function _newAccount(callback) {
         var user = {
             id: uuid.v4(),
             salt: uuid.v4(),
@@ -100,7 +100,7 @@ function register(req, res, callback) {
             password: password
         };
 
-        dao.newUser(user, callback);
+        dao.newAccount(user, callback);
     }
 
     function _isMailRegister(username) {
