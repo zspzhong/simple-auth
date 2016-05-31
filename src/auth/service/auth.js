@@ -1,4 +1,3 @@
-var innerRequest = require(global.frameworkLibPath + '/utils/innerRequest');
 var redis = require(global.frameworkLibPath + '/utils/redisUtils').instance();
 var logger = require(global.frameworkLibPath + '/logger');
 var cacheKey = require('../../lib/cacheKey');
@@ -9,55 +8,23 @@ var dao = require('../model/dao');
 
 var redisExpireDuration = 3600 * 24 * 30 * 6;// redis过期时长
 
-exports.sendVCode = sendVCode;
 exports.register = register;
 exports.login = login;
 exports.logout = logout;
-exports.resetPassword = resetPassword;
-exports.check = check;
-
-function sendVCode(req, res, callback) {
-    var reason = req.body.reason;
-    var phoneNumber = req.body.phoneNumber || '';
-    var code = _.padStart(Math.floor(Math.random() * 10000) + '', 4, '0');
-
-    if (!phoneNumber) {
-        callback(null, {code: 1, result: '电话号码不能为空'});
-        return;
-    }
-
-    // todo 受信验证
-    // todo 限制同一号码调用频率
-
-    async.series([_sendVCode, _set2Cache], callback);
-
-    function _sendVCode(callback) {
-        var url = global.appEnv.smsUrl + '/svc/sms/sendVCode';
-        var data = {
-            phoneNumber: phoneNumber,
-            code: code
-        };
-
-        innerRequest.post(url, data, callback);
-    }
-
-    function _set2Cache() {
-        redis.set(cacheKey.verificationCode(phoneNumber, reason), code, 'EX', 600, callback);
-    }
-}
+exports.updatePassword = updatePassword;
+exports.checkToken = checkToken;
+exports.checkPassword = checkPassword;
 
 function register(req, res, callback) {
-    var code = req.body.code || '';
     var username = req.body.username;
     var password = req.body.password;
 
     if (_.isEmpty(username) || _.isEmpty(password)) {
-        callback(null, {code: 1, result: '用户名或密码不能为空'});
+        callback(null, {code: 1, result: '用户名与密码不能为空'});
         return;
     }
 
-    var doneBreak = callback;
-    async.series([_verification, _checkDuplicate, _newAccount], function (err) {
+    async.series([_checkDuplicate, _newAccount], function (err) {
         if (err) {
             callback(err);
             return;
@@ -65,27 +32,6 @@ function register(req, res, callback) {
 
         callback(null);
     });
-
-    function _verification(callback) {
-        if (_isMailRegister(username)) {
-            process.nextTick(callback);
-            return;
-        }
-
-        redis.get(cacheKey.verificationCode(username, 'register'), function (err, result) {
-            if (err) {
-                callback(err);
-                return;
-            }
-
-            if (_.isEmpty(result) || code !== result) {
-                doneBreak(null, {code: 1, result: '验证码不正确'});
-                return;
-            }
-
-            callback(null);
-        });
-    }
 
     function _checkDuplicate(callback) {
         // todo 重复注册检查
@@ -102,17 +48,16 @@ function register(req, res, callback) {
 
         dao.newAccount(user, callback);
     }
-
-    function _isMailRegister(username) {
-        var mailReg = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
-
-        return mailReg.test(username);
-    }
 }
 
 function login(req, res, callback) {
     var username = req.body.username;
     var password = req.body.password;
+
+    if (_.isEmpty(username) || _.isEmpty(password)) {
+        callback(null, {code: 1, result: '用户名与密码不能为空'});
+        return;
+    }
 
     var deviceId = req.body.deviceId || '';
     var deviceType = req.body.deviceType || '';
@@ -244,15 +189,25 @@ function logout(req, res, callback) {
     }
 }
 
-function resetPassword(req, res, callback) {
-    callback(null);
+function updatePassword(req, res, callback) {
+    var username = req.body.username;
+    var password = req.body.password;
+
+    if (_.isEmpty(username) || _.isEmpty(password)) {
+        callback(null, {code: 1, result: '用户名与密码不能为空'});
+        return;
+    }
+
+    // todo kickOut all login account
+
+    dao.updatePassword(username, password, uuid.v4(), callback);
 }
 
-function check(req, res, callback) {
+function checkToken(req, res, callback) {
     var token = req.query.token || req.body.token || req.headers['x-token'];
 
     if (_.isEmpty(token)) {
-        callback({code: 1, result: '却少必要参数token'});
+        callback(null, {code: 1, result: '却少必要参数token'});
         return;
     }
 
@@ -323,4 +278,28 @@ function check(req, res, callback) {
 
         return {code: 0, result: {username: username}};
     }
+}
+
+function checkPassword(req, res, callback) {
+    var username = req.body.username;
+    var password = req.body.password;
+
+    if (_.isEmpty(username) || _.isEmpty(password)) {
+        callback(null, {code: 1, result: '用户名与密码不能为空'});
+        return;
+    }
+
+    dao.checkPassword(username, password, function (err, result) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        if (result !== true) {
+            callback(null, {code: 1, result: '用户名和密码不匹配'});
+            return;
+        }
+
+        callback(null);
+    });
 }

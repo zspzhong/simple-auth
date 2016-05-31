@@ -2,14 +2,6 @@
   "initial": "initial/index",
   "serviceList": [
     {
-      "name": "sendVCode",
-      "path": "/sendVCode",
-      "realizeFile": "auth",
-      "realizeFunction": "sendVCode",
-      "method": "post",
-      "desc": "发送验证码"
-    },
-    {
       "name": "register",
       "path": "/register",
       "realizeFile": "auth",
@@ -34,18 +26,26 @@
       "desc": "登出"
     },
     {
-      "name": "resetPassword",
-      "path": "/password/reset",
+      "name": "updatePassword",
+      "path": "/password/update",
       "realizeFile": "auth",
-      "realizeFunction": "resetPassword",
+      "realizeFunction": "updatePassword",
       "method": "post",
-      "desc": "重置密码"
+      "desc": "修改密码"
+    },
+    {
+      "name": "checkPassword",
+      "path": "/password/check",
+      "realizeFile": "auth",
+      "realizeFunction": "checkPassword",
+      "method": "post",
+      "desc": "检查密码是否正确"
     },
     {
       "name": "checkToken",
       "path": "/token/check",
       "realizeFile": "auth",
-      "realizeFunction": "check",
+      "realizeFunction": "checkToken",
       "method": [
         "get",
         "post"
