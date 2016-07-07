@@ -18,6 +18,14 @@
       "desc": "登陆"
     },
     {
+      "name": "login",
+      "path": "/thirdPartyLogin",
+      "realizeFile": "auth",
+      "realizeFunction": "thirdPartyLogin",
+      "method": "post",
+      "desc": "第三方帐号登陆"
+    },
+    {
       "name": "logout",
       "path": "/logout",
       "realizeFile": "auth",

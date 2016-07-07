@@ -5,7 +5,7 @@
       "name": "userInfo",
       "path": "/:thirdParty/userInfo",
       "realizeFile": "oauth",
-      "realizeFunction": "userInfo",
+      "realizeFunction": "thirdPartyUserInfo",
       "method": "get",
       "desc": "获取第三方用户信息"
     },
@@ -16,6 +16,14 @@
       "realizeFunction": "accountByOpenId",
       "method": "get",
       "desc": "根据openId获取帐号信息"
+    },
+    {
+      "name": "login",
+      "path": "/:thirdParty/login",
+      "realizeFile": "oauth",
+      "realizeFunction": "thirdPartyLogin",
+      "method": "post",
+      "desc": "第三方登录"
     }
   ]
 }

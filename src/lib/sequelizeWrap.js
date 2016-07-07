@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var Sequelize = require('sequelize');
-var sequelize = instance();
 
 var defaultOption = {
     timestamps: false,
@@ -8,17 +7,20 @@ var defaultOption = {
 };
 
 exports.define = define;
-exports.sync = sync;
 
 function define(modelName, attributes, options) {
-    return sequelize.define(modelName, attributes, _.extend((options || {}), defaultOption));
-}
+    if (_.isEmpty(define.sequelize)) {
+        define.sequelize = instance();
 
-function sync(options) {
-    // 每次sync完之后需要生成一个新的实例
-    var preSequelize = sequelize;
-    sequelize = instance();
-    return preSequelize.sync(options);
+        setTimeout(function () {
+            define.sequelize.sync().then(function () {
+                define.sequelize.close();
+                delete define.sequelize;
+            });
+        }, 5 * 1000);
+    }
+
+    define.sequelize.define(modelName, attributes, _.extend((options || {}), defaultOption));
 }
 
 function instance() {
@@ -26,7 +28,7 @@ function instance() {
         host: global.mysqlOption.host,
         dialect: 'mysql',
         pool: {
-            max: global.mysqlOption.connectionLimit,
+            max: 1,
             min: 0,
             idle: 10000
         }

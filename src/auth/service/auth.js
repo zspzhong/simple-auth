@@ -9,7 +9,8 @@ var dao = require('../model/dao');
 var redisExpireDuration = 3600 * 24 * 30 * 6;// redis过期时长
 
 exports.register = register;
-exports.login = login;
+exports.login = loginByPassword;
+exports.thirdPartyLogin = thirdPartyLogin;
 exports.logout = logout;
 exports.updatePassword = updatePassword;
 exports.checkToken = checkToken;
@@ -50,7 +51,7 @@ function register(req, res, callback) {
     }
 }
 
-function login(req, res, callback) {
+function loginByPassword(req, res, callback) {
     var username = req.body.username;
     var password = req.body.password;
 
@@ -59,25 +60,19 @@ function login(req, res, callback) {
         return;
     }
 
-    var deviceId = req.body.deviceId || '';
-    var deviceType = req.body.deviceType || '';
-    var duration = (req.body.duration || 3600 * 24 * 30) * 1000;
-    var kickOut = !_.isUndefined(req.body.kickOut);
-
-    var loginList = [];
-    var token = uuid.v4();
+    var loginInfo = {};
 
     var doneBreak = callback;
-    async.series([_verification, _existed, _update, _setToken2User], function (err) {
+    async.series([_checkPassword, _login], function (err) {
         if (err) {
             callback(err);
             return;
         }
 
-        callback(null, {token: token});
+        callback(null, loginInfo);
     });
 
-    function _verification(callback) {
+    function _checkPassword(callback) {
         dao.checkPassword(username, password, function (err, result) {
             if (err) {
                 callback(err);
@@ -93,43 +88,29 @@ function login(req, res, callback) {
         });
     }
 
-    function _existed(callback) {
-        redis.get(cacheKey.loginInfo(username), function (err, result) {
+    function _login(callback) {
+        login(req.body, function (err, result) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            if (!_.isEmpty(result)) {
-                loginList = JSON.parse(result);
-            }
+            loginInfo = result;
             callback(null);
         });
     }
+}
 
-    function _update(callback) {
-        if (kickOut) {
-            loginList = _.map(loginList, function (item) {
-                if (item.deviceType === deviceType) {
-                    item.kickOut = true;
-                }
-                return item;
-            });
-        }
+function thirdPartyLogin(req, res, callback) {
+    req.body.username = req.body.openId;
+    req.body.isThirdParty = true;
 
-        loginList.push({
-            token: token,
-            expireTime: Date.now() + duration,
-            deviceType: deviceType,
-            deviceId: deviceId
-        });
-
-        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginList), 'EX', redisExpireDuration, callback);
+    if (_.isEmpty(req.body.openId)) {
+        callback(null, {code: 1, result: '第三方帐号Id不能为空'});
+        return;
     }
 
-    function _setToken2User(callback) {
-        redis.set(token, username, 'EX', redisExpireDuration, callback);
-    }
+    login(req.body, callback);
 }
 
 function logout(req, res, callback) {
@@ -302,4 +283,66 @@ function checkPassword(req, res, callback) {
 
         callback(null);
     });
+}
+
+function login(options, callback) {
+    var username = options.username;
+    var deviceId = options.deviceId || '';
+    var deviceType = options.deviceType || '';
+    var duration = (options.duration || 3600 * 24 * 30) * 1000;
+    var kickOut = !_.isUndefined(options.kickOut);
+    var isThirdParty = !_.isUndefined(options.isThirdParty);
+
+    var maxExpire = _.max([duration / 1000, redisExpireDuration]);
+    var loginList = [];
+    var loginInfo = {};
+
+    async.series([_existed, _update, _setToken2User], function (err) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        callback(null, loginInfo);
+    });
+
+    function _existed(callback) {
+        redis.get(cacheKey.loginInfo(username), function (err, result) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (!_.isEmpty(result)) {
+                loginList = JSON.parse(result);
+            }
+            callback(null);
+        });
+    }
+
+    function _update(callback) {
+        if (kickOut) {
+            loginList = _.map(loginList, function (item) {
+                if (item.deviceType === deviceType) {
+                    item.kickOut = true;
+                }
+                return item;
+            });
+        }
+
+        loginInfo = {
+            token: uuid.v4(),
+            expireTime: Date.now() + duration,
+            deviceType: deviceType,
+            deviceId: deviceId,
+            isThirdParty: isThirdParty
+        };
+        loginList.push(loginInfo);
+
+        redis.set(cacheKey.loginInfo(username), JSON.stringify(loginList), 'EX', maxExpire, callback);
+    }
+
+    function _setToken2User(callback) {
+        redis.set(loginInfo.token, username, 'EX', maxExpire, callback);
+    }
 }

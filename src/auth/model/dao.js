@@ -7,14 +7,14 @@ exports.checkPassword = checkPassword;
 exports.deleteAccountByUsername = deleteAccountByUsername;
 
 
-function newAccount(user, callback) {
-    user.created_at = Date.now();
-    user.updated_at = user.created_at;
+function newAccount(account, callback) {
+    account.created_at = Date.now();
+    account.updated_at = account.created_at;
 
     var sql = 'insert into account(id, username, password, salt, created_at, updated_at)' +
         ' values(:id, :username, md5(concat(:password, :salt)), :salt, :created_at, :updated_at);';
 
-    dataUtils.execSql(sql, user, callback);
+    dataUtils.execSql(sql, account, callback);
 }
 
 function updatePassword(username, password, salt, callback) {

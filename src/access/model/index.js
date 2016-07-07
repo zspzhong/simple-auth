@@ -17,5 +17,3 @@ sequelizeWrap.define('allow_access_delete', {
     created_at: {type: TYPE.FLOAT, allowNull: false},
     updated_at: {type: TYPE.FLOAT, allowNull: false}
 }, {indexes: [{fields: ['key']}]});
-
-sequelizeWrap.sync();
