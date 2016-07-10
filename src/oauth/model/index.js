@@ -12,7 +12,7 @@ sequelizeWrap.define('third_party_relate_account', {
 
 sequelizeWrap.define('third_party_relate_account_delete', {
     id: {type: TYPE.STRING(64), primaryKey: true},
-    open_id: {type: TYPE.STRING(64), allowNull: false, unique: true},
+    open_id: {type: TYPE.STRING(64), allowNull: false},
     account_id: {type: TYPE.STRING(64), unique: true},
     third_party_name: {type: TYPE.STRING(64)},
     created_at: {type: TYPE.FLOAT, allowNull: false},

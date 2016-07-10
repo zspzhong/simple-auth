@@ -24,6 +24,14 @@
       "realizeFunction": "thirdPartyLogin",
       "method": "post",
       "desc": "第三方登录"
+    },
+    {
+      "name": "accountInfoByOpenId",
+      "path": "/thirdParty/account/:openId",
+      "realizeFile": "oauth",
+      "realizeFunction": "accountInfoByOpenId",
+      "method": "get",
+      "desc": "根据openId获取account信息"
     }
   ]
 }

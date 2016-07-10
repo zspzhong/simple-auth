@@ -15,6 +15,7 @@ exports.logout = logout;
 exports.updatePassword = updatePassword;
 exports.checkToken = checkToken;
 exports.checkPassword = checkPassword;
+exports.accountInfoByUsername = accountInfoByUsername;
 
 function register(req, res, callback) {
     var username = req.body.username;
@@ -102,11 +103,10 @@ function loginByPassword(req, res, callback) {
 }
 
 function thirdPartyLogin(req, res, callback) {
-    req.body.username = req.body.openId;
     req.body.isThirdParty = true;
 
-    if (_.isEmpty(req.body.openId)) {
-        callback(null, {code: 1, result: '第三方帐号Id不能为空'});
+    if (_.isEmpty(req.body.username)) {
+        callback(null, {code: 1, result: 'username不能为空'});
         return;
     }
 
@@ -282,6 +282,20 @@ function checkPassword(req, res, callback) {
         }
 
         callback(null);
+    });
+}
+
+function accountInfoByUsername(req, res, callback) {
+    var username = req.params.username;
+
+    dao.accountByUsername(username, function (err, result) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        result = _.isEmpty(result) ? {} : result[0];
+        callback(null, {account: result});
     });
 }
 

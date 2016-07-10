@@ -58,7 +58,15 @@
         "get",
         "post"
       ],
-      "desc": "检查登录token有效性"
+      "desc": "检查登录token是否有效"
+    },
+    {
+      "name": "accountInfoByUsername",
+      "path": "/account/:username",
+      "realizeFile": "auth",
+      "realizeFunction": "accountInfoByUsername",
+      "method": "get",
+      "desc": "根据username获取account信息"
     }
   ]
 }

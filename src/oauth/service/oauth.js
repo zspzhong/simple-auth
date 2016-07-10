@@ -11,6 +11,7 @@ var request = require('request');
 exports.thirdPartyUserInfo = thirdPartyUserInfo;
 exports.accountByOpenId = accountByOpenId;
 exports.thirdPartyLogin = thirdPartyLogin;
+exports.accountInfoByOpenId = accountInfoByOpenId;
 
 function thirdPartyUserInfo(req, res, callback) {
     var thirdParty = _.lowerCase(req.params.thirdParty);
@@ -54,6 +55,20 @@ function thirdPartyLogin(req, res, callback) {
         default:
             callback('unknown third party');
     }
+}
+
+function accountInfoByOpenId(req, res, callback) {
+    var openId = req.params.openId;
+
+    dao.accountByOpenId(openId, function (err, result) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        result = _.isEmpty(result) ? {} : result[0];
+        callback(null, {account: result});
+    });
 }
 
 function wechatUserInfo(options, callback) {
@@ -152,6 +167,7 @@ function wechatLogin(options, callback) {
 
     var wechatUserId = '';
     var firstLogin = true;
+    var selfAccount = {};
     var loginInfo = {};
 
     async.series([_userInfoByAccessToken, _selfAccount, _createThirdPartyAccount, _login], function (err) {
@@ -188,6 +204,7 @@ function wechatLogin(options, callback) {
             }
 
             firstLogin = _.isEmpty(result);
+            selfAccount = result;
             callback(null);
         });
     }
@@ -208,9 +225,16 @@ function wechatLogin(options, callback) {
     }
 
     function _login(callback) {
+        var username = wechatUserId;
+
+        // 已绑定己方帐号, 使用己方帐号登陆
+        if (!_.isEmpty(selfAccount) && !_.isEmpty(selfAccount.username)) {
+            username = selfAccount.username;
+        }
+
         var url = '/svc/auth/thirdPartyLogin';
         var data = {
-            openId: wechatUserId,
+            username: username,
             duration: expiresIn
         };
 

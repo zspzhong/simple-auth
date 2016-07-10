@@ -5,7 +5,7 @@ exports.newAccount = newAccount;
 exports.updatePassword = updatePassword;
 exports.checkPassword = checkPassword;
 exports.deleteAccountByUsername = deleteAccountByUsername;
-
+exports.accountByUsername = accountByUsername;
 
 function newAccount(account, callback) {
     account.created_at = Date.now();
@@ -58,4 +58,8 @@ function deleteAccountByUsername(username, callback) {
     ];
 
     dataUtils.seriesExecSql(sqlList, callback);
+}
+
+function accountByUsername(username, callback) {
+    dataUtils.query('account', {username: username}, ['id', 'username'], callback);
 }
