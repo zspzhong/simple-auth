@@ -1,5 +1,5 @@
 exports.loginInfo = loginInfo;
 
-function loginInfo(username) {
-    return 'login_info_' + username;
+function loginInfo(accountId) {
+    return 'login_info_' + accountId;
 }

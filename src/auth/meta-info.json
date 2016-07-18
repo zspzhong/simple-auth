@@ -7,7 +7,15 @@
       "realizeFile": "auth",
       "realizeFunction": "register",
       "method": "post",
-      "desc": "注册"
+      "comment": "注册",
+      "body": {
+        "username": "string|required",
+        "password": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": "{accountId}"
+      }
     },
     {
       "name": "login",
@@ -15,15 +23,39 @@
       "realizeFile": "auth",
       "realizeFunction": "login",
       "method": "post",
-      "desc": "登陆"
+      "comment": "登录",
+      "body": {
+        "username": "string|required",
+        "password": "string|required",
+        "duration": "number|default: 3600 * 24 * 30"
+      },
+      "res": {
+        "code": "number",
+        "result": "{accountId, expireTime, token, isTemporary}"
+      },
+      "bodyComment": {
+        "duration": "单位秒"
+      }
     },
     {
-      "name": "login",
-      "path": "/thirdPartyLogin",
+      "name": "temporaryLogin",
+      "path": "/temporary/login",
       "realizeFile": "auth",
-      "realizeFunction": "thirdPartyLogin",
+      "realizeFunction": "temporaryLogin",
       "method": "post",
-      "desc": "第三方帐号登陆"
+      "comment": "临时登录, 不需要密码",
+      "body": {
+        "username": "string|required",
+        "duration": "number|default: 3600 * 24 * 30"
+      },
+      "res": {
+        "code": "number",
+        "result": "{accountId, expireTime, token, isTemporary}"
+      },
+      "bodyComment": {
+        "username": "临时登录时, 该值只是一个唯一标志, 不一定是可用的用户名",
+        "duration": "单位秒"
+      }
     },
     {
       "name": "logout",
@@ -31,7 +63,17 @@
       "realizeFile": "auth",
       "realizeFunction": "logout",
       "method": "post",
-      "desc": "登出"
+      "comment": "登出",
+      "body": {
+        "token": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {}
+      },
+      "bodyComment": {
+        "token": "登录流程获取的token"
+      }
     },
     {
       "name": "updatePassword",
@@ -39,7 +81,32 @@
       "realizeFile": "auth",
       "realizeFunction": "updatePassword",
       "method": "post",
-      "desc": "修改密码"
+      "comment": "修改密码",
+      "body": {
+        "username": "string|required",
+        "newPassword": "string|required",
+        "oldPassword": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {}
+      }
+    },
+    {
+      "name": "resetPassword",
+      "path": "/password/reset",
+      "realizeFile": "auth",
+      "realizeFunction": "resetPassword",
+      "method": "post",
+      "comment": "重置密码",
+      "body": {
+        "username": "string|required",
+        "password": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {}
+      }
     },
     {
       "name": "checkPassword",
@@ -47,26 +114,112 @@
       "realizeFile": "auth",
       "realizeFunction": "checkPassword",
       "method": "post",
-      "desc": "检查密码是否正确"
+      "comment": "校验密码",
+      "body": {
+        "username": "string|required",
+        "password": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {
+          "isMatch": "boolean"
+        }
+      }
     },
     {
       "name": "checkToken",
-      "path": "/token/check",
+      "path": "/token/check/:token",
       "realizeFile": "auth",
       "realizeFunction": "checkToken",
-      "method": [
-        "get",
-        "post"
-      ],
-      "desc": "检查登录token是否有效"
+      "method": "get",
+      "comment": "检查登录token",
+      "res": {
+        "code": "number",
+        "result": {
+          "isValid": "boolean",
+          "accountId": "string"
+        }
+      },
+      "resComment": {
+        "accountId": "只有isValid为true时才有值"
+      }
     },
     {
-      "name": "accountInfoByUsername",
-      "path": "/account/:username",
+      "name": "accountById",
+      "path": "/account/id/:id",
       "realizeFile": "auth",
-      "realizeFunction": "accountInfoByUsername",
+      "realizeFunction": "accountById",
       "method": "get",
-      "desc": "根据username获取account信息"
+      "comment": "根据id获取帐号信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "id": "string",
+          "username": "string",
+          "relatedThirdParty": []
+        }
+      }
+    },
+    {
+      "name": "accountByUsername",
+      "path": "/account/username/:username",
+      "realizeFile": "auth",
+      "realizeFunction": "accountByUsername",
+      "method": "get",
+      "comment": "根据username获取帐号信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "id": "string",
+          "username": "string",
+          "relatedThirdParty": []
+        }
+      }
+    },
+    {
+      "name": "accountIdByToken",
+      "path": "/accountId/token/:token",
+      "realizeFile": "auth",
+      "realizeFunction": "accountIdByToken",
+      "method": "get",
+      "comment": "根据token获取帐号id",
+      "res": {
+        "code": "number",
+        "result": {
+          "accountId": "string"
+        }
+      }
+    },
+    {
+      "name": "deleteAccountById",
+      "path": "/account/delete/:accountId",
+      "realizeFile": "auth",
+      "realizeFunction": "deleteAccountById",
+      "method": "post",
+      "comment": "根据帐号id删除帐号",
+      "res": {
+        "code": "number",
+        "result": {
+          "accountId": "string"
+        }
+      }
+    },
+    {
+      "name": "tokenInfo",
+      "path": "/token/:token",
+      "realizeFile": "auth",
+      "realizeFunction": "tokenInfo",
+      "method": "get",
+      "comment": "获取token信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "accountId": "string",
+          "expireTime": "number",
+          "token": "string",
+          "isTemporary": "boolean"
+        }
+      }
     }
   ]
 }

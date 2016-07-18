@@ -1,0 +1,120 @@
+{
+  "initial": "initial/index",
+  "serviceList": [
+    {
+      "name": "register",
+      "path": "/thirdParty/accountId/:accountId",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "thirdPartyByAccountId",
+      "method": "get",
+      "comment": "根据帐号id获取第三方信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "thirdParty": []
+        }
+      },
+      "resComment": {
+        "thirdParty": "array, 跟帐号相关联的第三方信息, 即绑定的第三方帐号"
+      }
+    },
+    {
+      "name": "wechatUserInfoByCode",
+      "path": "/thirdParty/wechat/userInfo",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "wechatUserInfoByCode",
+      "method": "get",
+      "comment": "根据code(微信oauth2.0第二步返回的authorization_code)获取微信用户信息",
+      "query": {
+        "appId": "string|required",
+        "secret": "string|required",
+        "code": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {
+          "userInfo": {},
+          "isBound": "boolean"
+        }
+      },
+      "resComment": {
+        "userInfo": "第三方平台oauth授权所能拿到的公开信息",
+        "isBound": "是否已绑定平台帐号"
+      }
+    },
+    {
+      "name": "thirdPartyByOpenId",
+      "path": "/thirdParty/openId/:openId",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "thirdPartyByOpenId",
+      "method": "get",
+      "comment": "根据openId获取第三方信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "thirdParty": {}
+        }
+      }
+    },
+    {
+      "name": "accountByOpenId",
+      "path": "/thirdParty/account/openId/:openId",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "accountByOpenId",
+      "method": "get",
+      "comment": "根据openId获取帐号信息",
+      "res": {
+        "code": "number",
+        "result": {
+          "account": {}
+        }
+      }
+    },
+    {
+      "name": "login",
+      "path": "/thirdParty/wechat/login",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "wechatLogin",
+      "method": "post",
+      "comment": "微信使用openId+accessToken登录方式, 若已绑定平台帐号, 最终登录状态与用户名密码登录无区别",
+      "body": {
+        "openId": "string|required",
+        "accessToken": "string|required",
+        "duration": "number|default: 3600 * 24 * 30"
+      },
+      "res": {
+        "code": "number",
+        "result": {
+          "accountId": "string",
+          "expireTime": "number",
+          "token": "string",
+          "isTemporary": "boolean"
+        }
+      },
+      "bodyComment": {
+        "duration": "单位秒"
+      },
+      "resComment": {
+        "accountId": "若已绑定平台账户, 结果为平台帐号id"
+      }
+    },
+    {
+      "name": "thirdPartyBind",
+      "path": "/thirdParty/bind",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "thirdPartyBind",
+      "method": "post",
+      "comment": "帐号与第三方绑定",
+      "body": {
+        "openId": "string|required",
+        "openIdToken": "string|required",
+        "accountId": "string|required",
+        "accountIdToken": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {}
+      }
+    }
+  ]
+}

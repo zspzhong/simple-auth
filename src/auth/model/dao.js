@@ -1,30 +1,31 @@
 var dataUtils = require(global.frameworkLibPath + '/dao/dataUtils');
 var _ = require('lodash');
+var model = require('./index');
 
 exports.newAccount = newAccount;
-exports.updatePassword = updatePassword;
+exports.updatePasswordByUsername = updatePasswordByUsername;
 exports.checkPassword = checkPassword;
-exports.deleteAccountByUsername = deleteAccountByUsername;
+exports.accountById = accountById;
 exports.accountByUsername = accountByUsername;
+exports.deleteAccountById = deleteAccountById;
 
 function newAccount(account, callback) {
     account.created_at = Date.now();
     account.updated_at = account.created_at;
 
     var sql = 'insert into account(id, username, password, salt, created_at, updated_at)' +
-        ' values(:id, :username, md5(concat(:password, :salt)), :salt, :created_at, :updated_at);';
+        ' values(:id, :username, :password, :salt, :created_at, :updated_at);';
 
     dataUtils.execSql(sql, account, callback);
 }
 
-function updatePassword(username, password, salt, callback) {
+function updatePasswordByUsername(username, password, callback) {
     var sql = 'update account' +
-        ' set password = md5(concat(:password, :salt)), salt = :salt, updated_at = :updated_at' +
+        ' set password = :password, updated_at = :updated_at' +
         ' where username = :username;';
     var value = {
         username: username,
         password: password,
-        salt: salt,
         updated_at: Date.now()
     };
 
@@ -33,7 +34,7 @@ function updatePassword(username, password, salt, callback) {
 
 function checkPassword(username, password, callback) {
     var sql = 'select id from account' +
-        ' where username = :username and password = md5(concat(:password, salt));';
+        ' where username = :username and password = :password;';
 
     dataUtils.execSql(sql, {username: username, password: password}, function (err, result) {
         if (err) {
@@ -45,21 +46,25 @@ function checkPassword(username, password, callback) {
     });
 }
 
-function deleteAccountByUsername(username, callback) {
+function accountById(id, callback) {
+    dataUtils.query('account', {id: id}, model.table2Fields('account'), callback);
+}
+
+function accountByUsername(username, callback) {
+    dataUtils.query('account', {username: username}, model.table2Fields('account'), callback);
+}
+
+function deleteAccountById(accountId, callback) {
     var sqlList = [
         {
-            sql: 'inset into account_delete select * from user where username = :username;',
-            value: {username: username}
+            sql: 'insert into account_delete select * from account where id = :id;',
+            value: {id: accountId}
         },
         {
-            sql: 'delete from account where username = :username;',
-            value: {username: username}
+            sql: 'delete from account where id = :id;',
+            value: {id: accountId}
         }
     ];
 
     dataUtils.seriesExecSql(sqlList, callback);
-}
-
-function accountByUsername(username, callback) {
-    dataUtils.query('account', {username: username}, ['id', 'username'], callback);
 }

@@ -7,9 +7,13 @@
   "dependencies": {
     "async": "^1.5.2",
     "lodash": "^4.11.1",
+    "mocha": "^2.5.3",
     "mysql": "^2.10.2",
     "node-uuid": "^1.4.7",
     "request": "^2.72.0",
     "sequelize": "^3.21.0"
+  },
+  "scripts": {
+    "test": "mocha --require test/lib/config --reporter spec --slow 1000 test/"
   }
 }
