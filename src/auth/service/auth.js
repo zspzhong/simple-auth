@@ -425,7 +425,12 @@ function accountIdByToken(req, res, callback) {
 }
 
 function deleteAccountById(req, res, callback) {
-    var accountId = req.params.accountId;
+    var accountId = req.body.accountId;
+
+    if (_.isEmpty(accountId)) {
+        callback('accountId不能为空');
+        return;
+    }
 
     async.series([_logoutAccount, _delete], function (err) {
         if (err) {
@@ -450,13 +455,14 @@ function tokenInfo(req, res, callback) {
     var accountId = '';
     var tokenInfo = {};
 
+    var doneBreak = callback;
     async.series([_accountId, _loginInfo], function (err) {
         if (err) {
             callback(err);
             return;
         }
 
-        callback(null, {tokenInfo: tokenInfo});
+        callback(null, tokenInfo);
     });
 
     function _accountId(callback) {
@@ -468,7 +474,7 @@ function tokenInfo(req, res, callback) {
 
             accountId = result;
             if (_.isEmpty(accountId)) {
-                doneBreak(null, {tokenInfo: {}});
+                doneBreak(null, {});
                 return;
             }
 
@@ -688,7 +694,12 @@ function logoutAccountHelper(accountId, callback) {
                 return;
             }
 
-            loginList = result;
+            if (_.isEmpty(result)) {
+                callback(null);
+                return;
+            }
+
+            loginList = JSON.parse(result);
             callback(null);
         });
     }

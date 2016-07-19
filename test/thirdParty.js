@@ -2,7 +2,7 @@ var request = require('./lib/request');
 var assert = require('assert');
 var _ = require('lodash');
 
-describe('thridParty', function () {
+describe('thirdParty', function () {
     before(function (callback) {
         request.post('/register', _.pick(testConfig.mockData, ['username', 'password']), function (err, body) {
             if (err) {
@@ -12,13 +12,18 @@ describe('thridParty', function () {
 
             assert(body.code === 0, 'code is not 0');
             assert(!_.isEmpty(body.result.accountId), 'accountId is empty');
-            testConfig.mockData.id = body.result.accountId;
+            testConfig.mockData.accountId = body.result.accountId;
             callback(null);
         });
     });
 
     after(function (callback) {
-        request.post('/account/delete/' + testConfig.mockData.id, {}, function (err, body) {
+        if (_.isEmpty(testConfig.mockData.accountId)) {
+            callback(null);
+            return;
+        }
+
+        request.post('/account/delete', {accountId: testConfig.mockData.accountId}, function (err, body) {
             if (err) {
                 callback(err);
                 return;
@@ -32,7 +37,7 @@ describe('thridParty', function () {
 
     describe('/thirdParty/accountId/:accountId', function () {
         it('third party not exists', function (done) {
-            request.get('/thirdParty/accountId/' + testConfig.mockData.id, function (err, body) {
+            request.get('/thirdParty/accountId/' + testConfig.mockData.accountId, function (err, body) {
                 if (err) {
                     done(err);
                     return;

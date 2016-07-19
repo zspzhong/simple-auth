@@ -3,7 +3,25 @@ var assert = require('assert');
 var _ = require('lodash');
 
 describe('auth', function () {
-    describe('/register post', function () {
+    after(function (callback) {
+        if (_.isEmpty(testConfig.mockData.accountId)) {
+            callback(null);
+            return;
+        }
+
+        request.post('/account/delete', {accountId: testConfig.mockData.accountId}, function (err, body) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            assert(body.code === 0, 'code is not 0');
+            assert(!_.isEmpty(body.result.accountId, 'accountId is empty'));
+            callback(null);
+        });
+    });
+
+    describe('/register', function () {
         it('normal', function (done) {
             request.post('/register', _.pick(testConfig.mockData, ['username', 'password']), function (err, body) {
                 if (err) {
@@ -13,13 +31,13 @@ describe('auth', function () {
 
                 assert(body.code === 0, 'code is not 0');
                 assert(!_.isEmpty(body.result.accountId), 'accountId is empty');
-                testConfig.mockData.id = body.result.accountId;
+                testConfig.mockData.accountId = body.result.accountId;
                 done(null);
             });
         });
     });
 
-    describe('/login post', function () {
+    describe('/login', function () {
         it('normal', function (done) {
             request.post('/login', _.pick(testConfig.mockData, ['username', 'password']), function (err, body) {
                 if (err) {
@@ -109,7 +127,9 @@ describe('auth', function () {
                 }
 
                 assert(body.code === 0, 'code is not 0');
-                assert(!_.isEmpty(body.result.tokenInfo), 'token info is empty');
+                assert(!_.isEmpty(body.result.token), 'token is empty');
+                assert(!_.isEmpty(body.result.accountId), 'account id is empty');
+                assert(_.isNumber(body.result.expireTime), 'expireTime is not number');
                 done(null);
             });
         });
@@ -227,7 +247,7 @@ describe('auth', function () {
 
     describe('/account/id/:id', function () {
         it('normal', function (done) {
-            request.get('/account/id/' + testConfig.mockData.id, function (err, body) {
+            request.get('/account/id/' + testConfig.mockData.accountId, function (err, body) {
                 if (err) {
                     done(err);
                     return;
@@ -259,7 +279,7 @@ describe('auth', function () {
 
     describe('/account/delete/:accountId', function () {
         it('nomal', function (done) {
-            request.post('/account/delete/' + testConfig.mockData.id, {}, function (err, body) {
+            request.post('/account/delete', {accountId: testConfig.mockData.accountId}, function (err, body) {
                 if (err) {
                     done(err);
                     return;
@@ -267,6 +287,7 @@ describe('auth', function () {
 
                 assert(body.code === 0, 'code is not 0');
                 assert(!_.isEmpty(body.result.accountId, 'accountId is empty'));
+                testConfig.mockData.accountId = '';
                 done(null);
             });
         });

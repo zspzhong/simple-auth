@@ -14,7 +14,9 @@
       },
       "res": {
         "code": "number",
-        "result": "{accountId}"
+        "result": {
+          "accountId": "string"
+        }
       }
     },
     {
@@ -31,7 +33,12 @@
       },
       "res": {
         "code": "number",
-        "result": "{accountId, expireTime, token, isTemporary}"
+        "result": {
+          "accountId": "string",
+          "expireTime": "number",
+          "token": "string",
+          "isTemporary": "boolean"
+        }
       },
       "bodyComment": {
         "duration": "单位秒"
@@ -50,7 +57,12 @@
       },
       "res": {
         "code": "number",
-        "result": "{accountId, expireTime, token, isTemporary}"
+        "result": {
+          "accountId": "string",
+          "expireTime": "number",
+          "token": "string",
+          "isTemporary": "boolean"
+        }
       },
       "bodyComment": {
         "username": "临时登录时, 该值只是一个唯一标志, 不一定是可用的用户名",
@@ -192,11 +204,14 @@
     },
     {
       "name": "deleteAccountById",
-      "path": "/account/delete/:accountId",
+      "path": "/account/delete",
       "realizeFile": "auth",
       "realizeFunction": "deleteAccountById",
       "method": "post",
       "comment": "根据帐号id删除帐号",
+      "body": {
+        "accountId": "string|required"
+      },
       "res": {
         "code": "number",
         "result": {

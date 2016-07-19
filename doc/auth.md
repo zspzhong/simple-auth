@@ -5,7 +5,7 @@
 * `url`: /register
 * `method`: post
 * `body`: {username: string|required, password: string|required}
-* `res`: {code: number, result: {accountId}}
+* `res`: {code: number, result: {accountId: string}}
 
 ## login
 * `comment`: 登录
@@ -15,7 +15,7 @@
 ```
 duration: 单位秒
 ```
-* `res`: {code: number, result: {accountId, expireTime, token, isTemporary}}
+* `res`: {code: number, result: {accountId: string, expireTime: number, token: string, isTemporary: boolean}}
 
 ## temporaryLogin
 * `comment`: 临时登录, 不需要密码
@@ -26,7 +26,7 @@ duration: 单位秒
 username: 临时登录时, 该值只是一个唯一标志, 不一定是可用的用户名
 duration: 单位秒
 ```
-* `res`: {code: number, result: {accountId, expireTime, token, isTemporary}}
+* `res`: {code: number, result: {accountId: string, expireTime: number, token: string, isTemporary: boolean}}
 
 ## logout
 * `comment`: 登出
@@ -88,8 +88,9 @@ accountId: 只有isValid为true时才有值
 
 ## deleteAccountById
 * `comment`: 根据帐号id删除帐号
-* `url`: /account/delete/:accountId
+* `url`: /account/delete
 * `method`: post
+* `body`: {accountId: string|required}
 * `res`: {code: number, result: {accountId: string}}
 
 ## tokenInfo
