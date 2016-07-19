@@ -14,6 +14,6 @@
     "sequelize": "^3.21.0"
   },
   "scripts": {
-    "test": "mocha --require test/lib/config --reporter spec --slow 1000 test/"
+    "test": "mocha --require test/lib/config --reporter spec --slow 1000 -b -t 5000 test/"
   }
 }

@@ -1,6 +1,6 @@
 {
   "initial": "initial/index",
-  "serviceList": [
+  "service": [
     {
       "name": "register",
       "path": "/register",
