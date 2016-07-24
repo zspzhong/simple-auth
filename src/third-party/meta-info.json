@@ -107,9 +107,26 @@
       "comment": "帐号与第三方绑定",
       "body": {
         "openId": "string|required",
-        "openIdToken": "string|required",
+        "token4OpenId": "string|required",
         "accountId": "string|required",
-        "accountIdToken": "string|required"
+        "token4AccountId": "string|required"
+      },
+      "res": {
+        "code": "number",
+        "result": {}
+      }
+    },
+    {
+      "name": "thirdPartyUnbind",
+      "path": "/thirdParty/unbind",
+      "realizeFile": "thirdParty",
+      "realizeFunction": "thirdPartyUnbind",
+      "method": "post",
+      "comment": "帐号与第三方解除绑定",
+      "body": {
+        "openId": "string|required",
+        "accountId": "string|required",
+        "token4AccountId": "string|required"
       },
       "res": {
         "code": "number",

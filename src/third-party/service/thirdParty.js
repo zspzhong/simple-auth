@@ -14,6 +14,7 @@ exports.thirdPartyByOpenId = thirdPartyByOpenId;
 exports.accountByOpenId = accountByOpenId;
 exports.wechatLogin = wechatLogin;
 exports.thirdPartyBind = thirdPartyBind;
+exports.thirdPartyUnbind = thirdPartyUnbind;
 
 function thirdPartyByAccountId(req, res, callback) {
     var accountId = req.params.accountId;
@@ -254,9 +255,9 @@ function wechatLogin(req, res, callback) {
 
 function thirdPartyBind(req, res, callback) {
     var openId = req.body.oepnId;
-    var openIdToken = req.body.openIdToken;
+    var token4OpenId = req.body.token4OpenId;
     var accountId = req.body.accountId;
-    var accountIdToken = req.body.accountIdToken;
+    var token4AccountId = req.body.token4AccountId;
 
     if (_.isEmpty(openId)) {
         callback('openId不能为空');
@@ -268,13 +269,13 @@ function thirdPartyBind(req, res, callback) {
         return;
     }
 
-    if (_.isEmpty(openIdToken)) {
-        callback('openIdToken不能为空');
+    if (_.isEmpty(token4OpenId)) {
+        callback('token4OpenId不能为空');
         return;
     }
 
-    if (_.isEmpty(accountIdToken)) {
-        callback('accountIdToken不能为空');
+    if (_.isEmpty(token4AccountId)) {
+        callback('token4AccountId不能为空');
         return;
     }
 
@@ -286,14 +287,14 @@ function thirdPartyBind(req, res, callback) {
         async.series([_openId, _accountId], callback);
 
         function _openId(callback) {
-            _token2AccountId(openIdToken, function (err, result) {
+            _tokenValid(token4OpenId, function (err, result) {
                 if (err) {
                     callback(err);
                     return;
                 }
 
-                if (openId !== result) {
-                    callback('第三方登录信息有误');
+                if (!result.isValid || openId !== result.accountId) {
+                    callback('第三方登录信息无效');
                     return;
                 }
 
@@ -302,14 +303,14 @@ function thirdPartyBind(req, res, callback) {
         }
 
         function _accountId(callback) {
-            _token2AccountId(accountIdToken, function (err, result) {
+            _tokenValid(token4AccountId, function (err, result) {
                 if (err) {
                     callback(err);
                     return;
                 }
 
-                if (accountId !== result) {
-                    callback('帐号登录信息有误');
+                if (!result.isValid || accountId !== result.accountId) {
+                    callback('帐号登录信息无效');
                     return;
                 }
 
@@ -317,16 +318,9 @@ function thirdPartyBind(req, res, callback) {
             });
         }
 
-        function _token2AccountId(token, callback) {
-            var url = global.baseUrl + '/svc/accountId/token' + encodeURIComponent(token);
-            innerRequest.get(url, function (err, result) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-
-                callback(null, result.accountId);
-            });
+        function _tokenValid(token, callback) {
+            var url = global.baseUrl + '/svc/token/check/' + encodeURIComponent(token);
+            innerRequest.get(url, callback);
         }
     }
 
@@ -350,14 +344,7 @@ function thirdPartyBind(req, res, callback) {
     function _accountExists(callback) {
         var url = global.appEnv.baseUrl + '/svc/auth/account/id/' + encodeURIComponent(accountId);
 
-        innerRequest.get(url, function (err) {
-            if (err) {
-                callback(err);
-                return;
-            }
-
-            callback(null);
-        });
+        innerRequest.get(url, callback);
     }
 
     function _bind(callback) {
@@ -365,6 +352,80 @@ function thirdPartyBind(req, res, callback) {
             id: thirdPartyId,
             open_id: openId,
             account_id: accountId
+        };
+
+        dao.updateThirdParty(thirdParty, callback);
+    }
+}
+
+function thirdPartyUnbind(req, res, callback) {
+    var openId = req.body.oepnId;
+    var accountId = req.body.accountId;
+    var token4AccountId = req.body.token4AccountId;
+
+    if (_.isEmpty(openId)) {
+        callback('openId不能为空');
+        return;
+    }
+
+    if (_.isEmpty(accountId)) {
+        callback('accountId不能为空');
+        return;
+    }
+
+    if (_.isEmpty(token4AccountId)) {
+        callback('token4AccountId不能为空');
+        return;
+    }
+
+    var thirdPartyId = '';
+    async.series([_tokenCheck, _accountExists, _thirdPartExists, _unbind], callback);
+
+    function _tokenCheck(callback) {
+        var url = global.baseUrl + '/svc/token/check/' + encodeURIComponent(token4AccountId);
+        innerRequest.get(url, function (err, result) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (!result.isValid || accountId !== result.accountId) {
+                callback('帐号登录信息无效');
+                return;
+            }
+
+            callback(null);
+        });
+    }
+
+    function _accountExists(callback) {
+        var url = global.appEnv.baseUrl + '/svc/auth/account/id/' + encodeURIComponent(accountId);
+
+        innerRequest.get(url, callback);
+    }
+
+    function _thirdPartExists(callback) {
+        dao.thirdPartyByOpenId(openId, function (err, result) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (_.isEmpty(result)) {
+                callback('第三方信息不存在');
+                return;
+            }
+
+            thirdPartyId = result[0].id;
+            callback(null);
+        });
+    }
+
+    function _unbind(callback) {
+        var thirdParty = {
+            id: thirdPartyId,
+            open_id: openId,
+            account_id: null
         };
 
         dao.updateThirdParty(thirdParty, callback);
