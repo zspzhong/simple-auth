@@ -49,5 +49,12 @@ accountId: 若已绑定平台账户, 结果为平台帐号id
 * `comment`: 帐号与第三方绑定
 * `url`: /thirdParty/bind
 * `method`: post
-* `body`: {openId: string|required, openIdToken: string|required, accountId: string|required, accountIdToken: string|required}
+* `body`: {openId: string|required, token4OpenId: string|required, accountId: string|required, token4AccountId: string|required}
+* `res`: {code: number, result: {}}
+
+## thirdPartyUnbind
+* `comment`: 帐号与第三方解除绑定
+* `url`: /thirdParty/unbind
+* `method`: post
+* `body`: {openId: string|required, accountId: string|required, token4AccountId: string|required}
 * `res`: {code: number, result: {}}
