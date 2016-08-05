@@ -1,8 +1,8 @@
 var TYPE = require('sequelize');
-var sequelizeWrap = require('../../lib/sequelizeWrap');
+var sequelizeUtil = require(global.frameworkLibPath + '/utils/sequelize');
 
 // 访问控制
-sequelizeWrap.define('allow_access', {
+sequelizeUtil.define('allow_access', {
     id: {type: TYPE.STRING(64), primaryKey: true},
     key: {type: TYPE.STRING(64), allowNull: false, unique: true},
     secret: {type: TYPE.STRING(64), allowNull: false, unique: true},
@@ -10,7 +10,7 @@ sequelizeWrap.define('allow_access', {
     updated_at: {type: TYPE.FLOAT, allowNull: false}
 }, {indexes: [{fields: ['key']}]});
 
-sequelizeWrap.define('allow_access_delete', {
+sequelizeUtil.define('allow_access_delete', {
     id: {type: TYPE.STRING(64), primaryKey: true},
     key: {type: TYPE.STRING(64), allowNull: false, unique: true},
     secret: {type: TYPE.STRING(64), allowNull: false, unique: true},

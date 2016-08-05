@@ -1,6 +1,6 @@
 var _ = require('lodash');
 var TYPE = require('sequelize');
-var sequelizeWrap = require('../../lib/sequelizeWrap');
+var sequelizeUtil = require(global.frameworkLibPath + '/utils/sequelize');
 
 var table2Schema = {
     account: {
@@ -21,13 +21,7 @@ var table2Schema = {
     }
 };
 
-exports.table2Fields = table2Fields;
+exports.table2Fields = sequelizeUtil.table2Fields;
 
-sequelizeWrap.define('account', table2Schema.account, {indexes: [{fields: ['username']}]});
-
-sequelizeWrap.define('account_delete', table2Schema.account_delete);
-
-
-function table2Fields(table) {
-    return _.keys(table2Schema[table]);
-}
+sequelizeUtil.define('account', table2Schema.account, {indexes: [{fields: ['username']}]});
+sequelizeUtil.define('account_delete', table2Schema.account_delete);

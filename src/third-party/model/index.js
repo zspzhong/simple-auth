@@ -1,6 +1,6 @@
 var _ = require('lodash');
 var TYPE = require('sequelize');
-var sequelizeWrap = require('../../lib/sequelizeWrap');
+var sequelizeUtil = require(global.frameworkLibPath + '/utils/sequelize');
 
 var table2Schema = {
     third_party_relate_account: {
@@ -21,12 +21,7 @@ var table2Schema = {
     }
 };
 
-exports.table2Fields = table2Fields;
+exports.table2Fields = sequelizeUtil.table2Fields;
 
-sequelizeWrap.define('third_party_relate_account', table2Schema.third_party_relate_account, {indexes: [{fields: ['account_id']}, {fields: ['open_id']}]});
-
-sequelizeWrap.define('third_party_relate_account_delete', table2Schema.third_party_relate_account_delete, {indexes: [{fields: ['account_id']}, {fields: ['open_id']}]});
-
-function table2Fields(table) {
-    return _.keys(table2Schema[table]);
-}
+sequelizeUtil.define('third_party_relate_account', table2Schema.third_party_relate_account, {indexes: [{fields: ['account_id']}, {fields: ['open_id']}]});
+sequelizeUtil.define('third_party_relate_account_delete', table2Schema.third_party_relate_account_delete, {indexes: [{fields: ['account_id']}, {fields: ['open_id']}]});
