@@ -1,6 +1,6 @@
-var redis = require(global.frameworkLibPath + '/utils/redisUtils').instance();
+var redis = require(global.frameworkLibPath + '/util/redis').instance();
 var logger = require(global.frameworkLibPath + '/logger');
-var innerRequest = require(global.frameworkLibPath + '/utils/innerRequest');
+var innerRequest = require(global.frameworkLibPath + '/util/innerRequest');
 var crypto = require('crypto');
 var cacheKey = require('../../lib/cacheKey');
 var uuid = require('node-uuid');

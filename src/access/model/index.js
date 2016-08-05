@@ -1,5 +1,5 @@
 var TYPE = require('sequelize');
-var sequelizeUtil = require(global.frameworkLibPath + '/utils/sequelize');
+var sequelizeUtil = require(global.frameworkLibPath + '/util/sequelize');
 
 // 访问控制
 sequelizeUtil.define('allow_access', {

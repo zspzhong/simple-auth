@@ -1,5 +1,5 @@
 var logger = require(global.frameworkLibPath + '/logger');
-var innerRequest = require(global.frameworkLibPath + '/utils/innerRequest');
+var innerRequest = require(global.frameworkLibPath + '/util/innerRequest');
 var uuid = require('node-uuid');
 var _ = require('lodash');
 var async = require('async');

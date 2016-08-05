@@ -1,6 +1,6 @@
 var _ = require('lodash');
 var TYPE = require('sequelize');
-var sequelizeUtil = require(global.frameworkLibPath + '/utils/sequelize');
+var sequelizeUtil = require(global.frameworkLibPath + '/util/sequelize');
 
 var table2Schema = {
     account: {
